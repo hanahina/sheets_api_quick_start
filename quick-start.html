@@ -140,13 +140,13 @@
                   }
 
                   if (time[0] < 10) {
-                    timePoint = '早餐前';
+                    timePoint = 'breakfast';
                   } else if (time[0] < 14) {
-                    timePoint = '午餐前';
+                    timePoint = 'lunch';
                   } else if (time[0] < 21) {
-                    timePoint = '晚餐前';
+                    timePoint = 'dinner';
                   } else {
-                    timePoint = '睡前';
+                    timePoint = 'bedtime';
                   }
 
                   timeStamp = new Date(...date, ...time);
@@ -165,7 +165,188 @@
                 }
                 return prev;
               }, []);
-              console.table(newData);
+              // console.table(newData);
+
+              const dataCalc = newData.reduce((prev, item) => {
+                const targetIndex =  prev.findIndex((ele) => {
+                  return ele.date === `${item.timeStamp.getFullYear()}-${item.timeStamp.getMonth() + 1}-${item.timeStamp.getDate()}`;
+                })
+                let side = '';
+                let weekDay = '';
+                
+                switch (item.side) {
+                  case '左上臂':
+                    side = "leftArm";
+                    break;
+                  
+                  case '右上臂':
+                    side = "rightArm";
+                    break;
+                    
+                  case '左手腕':
+                    side = "leftWrist";
+                    break;
+                    
+                  case '右手腕':
+                    side = "rightWrist";
+                    break;
+                  default:
+                    break;
+                }
+
+                switch (item.timeStamp.getDay()) {
+                  case 0:
+                    weekDay = "Sun";
+                    break;
+                  
+                  case 1:
+                    weekDay = "Mon";
+                    break;
+                
+                  case 2:
+                    weekDay = "Tue";
+                    break;
+                
+                  case 3:
+                    weekDay = "Wed";
+                    break;
+                
+                  case 4:
+                    weekDay = "Thu";
+                    break;
+                
+                  case 5:
+                    weekDay = "Fri";
+                    break;
+                
+                  case 6:
+                    weekDay = "Sat";
+                    break;
+                
+                  default:
+                    break;
+                }
+                if(targetIndex === -1) {
+                  prev.push({
+                    id: prev.length,
+                    weekDay,
+                    date:　`${item.timeStamp.getFullYear()}-${item.timeStamp.getMonth() + 1}-${item.timeStamp.getDate()}`,
+                    // leftArm: {
+                    //   breakfast: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   lunch: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   dinner: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   bedtime: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    // },
+                    // rightArm: {
+                    //   breakfast: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   lunch: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   dinner: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   bedtime: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    // },
+                    // leftWrist: {
+                    //   breakfast: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   lunch: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   dinner: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   bedtime: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    // },
+                    // rightWrist: {
+                    //   breakfast: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   lunch: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   dinner: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    //   bedtime: {
+                    //     sys: [],
+                    //     dia: [],
+                    //     pulse: [],
+                    //   },
+                    // },
+                  });
+                  prev[prev.length - 1][side] = {};
+                  prev[prev.length - 1][side][item.timePoint] = {
+                    sys: [],
+                    dia: [],
+                    pulse: [],
+                  };
+
+
+                  prev[prev.length - 1][side][item.timePoint].sys.push(item.sys);
+                  prev[prev.length - 1][side][item.timePoint].dia.push(item.dia);
+                  prev[prev.length - 1][side][item.timePoint].pulse.push(item.pulse);
+                } else {
+                  prev[targetIndex][side] = prev[targetIndex][side] || {};
+                  prev[targetIndex][side][item.timePoint] = prev[targetIndex][side][item.timePoint] ||{
+                    sys: [],
+                    dia: [],
+                    pulse: [],
+                  };
+                  prev[targetIndex][side][item.timePoint].sys.push(item.sys);
+                  prev[targetIndex][side][item.timePoint].dia.push(item.dia);
+                  prev[targetIndex][side][item.timePoint].pulse.push(item.pulse);
+                }
+
+                return prev;
+              }, []);
+
+              console.log(dataCalc);
             },
             function(response) {
               appendPre('Error: ' + response.result.error.message);
