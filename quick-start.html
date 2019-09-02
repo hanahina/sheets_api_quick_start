@@ -166,8 +166,14 @@
                 return prev;
               }, []);
               // console.table(newData);
-
-              const dataCalc = newData.reduce((prev, item) => {
+              return newData;
+            },
+            function(response) {
+              appendPre('Error: ' + response.result.error.message);
+            }
+          ).then(
+            function(res) {
+              const dataCalc = res.reduce((prev, item) => {
                 const targetIndex =  prev.findIndex((ele) => {
                   return ele.date === `${item.timeStamp.getFullYear()}-${item.timeStamp.getMonth() + 1}-${item.timeStamp.getDate()}`;
                 })
@@ -231,94 +237,6 @@
                     id: prev.length,
                     weekDay,
                     date:　`${item.timeStamp.getFullYear()}-${item.timeStamp.getMonth() + 1}-${item.timeStamp.getDate()}`,
-                    // leftArm: {
-                    //   breakfast: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   lunch: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   dinner: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   bedtime: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    // },
-                    // rightArm: {
-                    //   breakfast: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   lunch: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   dinner: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   bedtime: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    // },
-                    // leftWrist: {
-                    //   breakfast: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   lunch: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   dinner: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   bedtime: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    // },
-                    // rightWrist: {
-                    //   breakfast: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   lunch: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   dinner: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    //   bedtime: {
-                    //     sys: [],
-                    //     dia: [],
-                    //     pulse: [],
-                    //   },
-                    // },
                   });
                   prev[prev.length - 1][side] = {};
                   prev[prev.length - 1][side][item.timePoint] = {
@@ -347,9 +265,6 @@
               }, []);
 
               console.log(dataCalc);
-            },
-            function(response) {
-              appendPre('Error: ' + response.result.error.message);
             }
           );
       }
