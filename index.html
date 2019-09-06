@@ -6,6 +6,10 @@
   </head>
   <body>
     <p>Google Sheets API Quickstart</p>
+    <a href="./">總表</a>
+    <a href="leftHand.html">左手</a>
+    <a href="rightHand.html">右手</a>
+
 
     <!--Add buttons to initiate auth sequence and sign out-->
     <button id="authorize_button" style="display: none;">Authorize</button>
@@ -13,6 +17,8 @@
 
     <pre id="content" style="white-space: pre-wrap;"></pre>
 
+    <div id="dataWrap"></div>
+    
     <script type="text/javascript">
       // Client ID and API key from the Developer Console
       var CLIENT_ID =
@@ -30,6 +36,11 @@
 
       var authorizeButton = document.getElementById('authorize_button');
       var signoutButton = document.getElementById('signout_button');
+
+      function average(ary) {
+        const sum = ary.reduce((prev, value) => prev += value * 1, 0);
+        return sum / ary.length;
+      }
 
       /**
        *  On load, called to load the auth2 library and API client library.
@@ -143,7 +154,7 @@
                     timePoint = 'breakfast';
                   } else if (time[0] < 14) {
                     timePoint = 'lunch';
-                  } else if (time[0] < 21) {
+                  } else if (time[0] < 22) {
                     timePoint = 'dinner';
                   } else {
                     timePoint = 'bedtime';
@@ -238,33 +249,71 @@
                     weekDay,
                     date:　`${item.timeStamp.getFullYear()}-${item.timeStamp.getMonth() + 1}-${item.timeStamp.getDate()}`,
                   });
-                  prev[prev.length - 1][side] = {};
-                  prev[prev.length - 1][side][item.timePoint] = {
+                  prev[prev.length - 1].bothHand = {};
+                  prev[prev.length - 1].bothHand[item.timePoint] = {
                     sys: [],
                     dia: [],
                     pulse: [],
                   };
 
 
-                  prev[prev.length - 1][side][item.timePoint].sys.push(item.sys);
-                  prev[prev.length - 1][side][item.timePoint].dia.push(item.dia);
-                  prev[prev.length - 1][side][item.timePoint].pulse.push(item.pulse);
+                  prev[prev.length - 1].bothHand[item.timePoint].sys.push(item.sys);
+                  prev[prev.length - 1].bothHand[item.timePoint].dia.push(item.dia);
+                  prev[prev.length - 1].bothHand[item.timePoint].pulse.push(item.pulse);
                 } else {
-                  prev[targetIndex][side] = prev[targetIndex][side] || {};
-                  prev[targetIndex][side][item.timePoint] = prev[targetIndex][side][item.timePoint] ||{
+                  prev[targetIndex].bothHand = prev[targetIndex].bothHand || {};
+                  prev[targetIndex].bothHand[item.timePoint] = prev[targetIndex].bothHand[item.timePoint] ||{
                     sys: [],
                     dia: [],
                     pulse: [],
                   };
-                  prev[targetIndex][side][item.timePoint].sys.push(item.sys);
-                  prev[targetIndex][side][item.timePoint].dia.push(item.dia);
-                  prev[targetIndex][side][item.timePoint].pulse.push(item.pulse);
+                  prev[targetIndex].bothHand[item.timePoint].sys.push(item.sys);
+                  prev[targetIndex].bothHand[item.timePoint].dia.push(item.dia);
+                  prev[targetIndex].bothHand[item.timePoint].pulse.push(item.pulse);
                 }
 
                 return prev;
               }, []);
 
               console.log(dataCalc);
+              return dataCalc;
+            }
+          ).then(
+            function(res) {
+              const target = document.getElementById('dataWrap');
+              let str = res.reduceRight(function(prev, item) {
+
+                prev += `
+                <h3>${item.date} (${item.weekDay})</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>時間點</th>
+                      <th>收縮壓</th>
+                      <th>舒張壓</th>
+                      <th>脈搏</th>
+                    </tr>
+                  </thead>
+                  <tbody>`;
+                for (const key in item.bothHand) {
+                  const value = item.bothHand;
+                  prev += `
+                    <tr>
+                      <td>${key}</td>
+                      <td>${average(value[key].sys)}</td>
+                      <td>${average(value[key].dia)}</td>
+                      <td>${average(value[key].pulse)}</td>
+                    </tr>
+                  `
+                }
+                prev +=`  
+                  </tbody>
+                </table>
+                `
+                return prev;
+              }, '');
+
+              target.innerHTML = str;
             }
           );
       }
