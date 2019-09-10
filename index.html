@@ -39,7 +39,7 @@
 
       function average(ary) {
         const sum = ary.reduce((prev, value) => prev += value * 1, 0);
-        return sum / ary.length;
+        return Math.round(sum * 100 / ary.length) / 100;
       }
 
       /**
