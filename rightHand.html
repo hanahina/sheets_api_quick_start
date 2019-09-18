@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Sheets API Quickstart</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <p>Google Sheets API Quickstart</p>
+    <a href="./">總表</a>
+    <a href="leftHand.html">左手</a>
+    <a href="rightHand.html">右手</a>
+
+
+    <!--Add buttons to initiate auth sequence and sign out-->
+    <button id="authorize_button" style="display: none;">Authorize</button>
+    <button id="signout_button" style="display: none;">Sign Out</button>
+
+    <pre id="content" style="white-space: pre-wrap;"></pre>
+
+    <div id="dataWrap"></div>
+    
+    <script type="text/javascript">
+      // Client ID and API key from the Developer Console
+      var CLIENT_ID =
+        '1038977904038-isov41ibiopq3htorolu36giti3uefig.apps.googleusercontent.com';
+      var API_KEY = 'AIzaSyCMcMDP8huC5UuoX_-SdC3tOI3de_d7GcE';
+
+      // Array of API discovery doc URLs for APIs used by the quickstart
+      var DISCOVERY_DOCS = [
+        'https://sheets.googleapis.com/$discovery/rest?version=v4'
+      ];
+
+      // Authorization scopes required by the API; multiple scopes can be
+      // included, separated by spaces.
+      var SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+      var authorizeButton = document.getElementById('authorize_button');
+      var signoutButton = document.getElementById('signout_button');
+
+      function average(ary) {
+        const sum = ary.reduce((prev, value) => prev += value * 1, 0);
+        return Math.round(sum * 100 / ary.length) / 100;
+      }
+
+      /**
+       *  On load, called to load the auth2 library and API client library.
+       */
+      function handleClientLoad() {
+        gapi.load('client:auth2', initClient);
+      }
+
+      /**
+       *  Initializes the API client library and sets up sign-in state
+       *  listeners.
+       */
+      function initClient() {
+        gapi.client
+          .init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            discoveryDocs: DISCOVERY_DOCS,
+            scope: SCOPES
+          })
+          .then(
+            function() {
+              // Listen for sign-in state changes.
+              gapi.auth2
+                .getAuthInstance()
+                .isSignedIn.listen(updateSigninStatus);
+
+              // Handle the initial sign-in state.
+              updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+              authorizeButton.onclick = handleAuthClick;
+              signoutButton.onclick = handleSignoutClick;
+            },
+            function(error) {
+              appendPre(JSON.stringify(error, null, 2));
+            }
+          );
+      }
+
+      /**
+       *  Called when the signed in status changes, to update the UI
+       *  appropriately. After a sign-in, the API is called.
+       */
+      function updateSigninStatus(isSignedIn) {
+        if (isSignedIn) {
+          authorizeButton.style.display = 'none';
+          signoutButton.style.display = 'block';
+          listMajors();
+        } else {
+          authorizeButton.style.display = 'block';
+          signoutButton.style.display = 'none';
+        }
+      }
+
+      /**
+       *  Sign in the user upon button click.
+       */
+      function handleAuthClick(event) {
+        gapi.auth2.getAuthInstance().signIn();
+      }
+
+      /**
+       *  Sign out the user upon button click.
+       */
+      function handleSignoutClick(event) {
+        gapi.auth2.getAuthInstance().signOut();
+      }
+
+      /**
+       * Append a pre element to the body containing the given message
+       * as its text node. Used to display the results of the API call.
+       *
+       * @param {string} message Text to be placed in pre element.
+       */
+      function appendPre(message) {
+        var pre = document.getElementById('content');
+        var textContent = document.createTextNode(message + '\n');
+        pre.appendChild(textContent);
+      }
+
+      /**
+       * Print the names and majors of students in a sample spreadsheet:
+       * https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
+       */
+      function listMajors() {
+        gapi.client.sheets.spreadsheets.values
+          .get({
+            spreadsheetId: '1GA9Gs5EBAnTxLvq7C44CBtJ3wEJ01nkgQO1R2qR2-ls',
+            range: "'表單回應 1'!A:G"
+          })
+          .then(
+            function(response) {
+              const data = response.result.values;
+              const newData = response.result.values.reduce((prev, item, i) => {
+                if (i) {
+                  const date = item[1].split('/');
+                  const timeGroup = item[2].split(' ');
+                  const time = timeGroup[1].split(':');
+                  let timeStamp = '';
+                  let timePoint = '';
+                  date[1] -= 1;
+                  time[0] %= 12;
+
+                  if (timeGroup[0] === '下午') {
+                    time[0] += 12;
+                  } else if (timeGroup[0] === '上午' && time[0] < 5) {
+                    date[2] -= 1;
+                    time[0] += 24;
+                  }
+
+                  if (time[0] < 10) {
+                    timePoint = 'breakfast';
+                  } else if (time[0] < 14) {
+                    timePoint = 'lunch';
+                  } else if (time[0] < 22) {
+                    timePoint = 'dinner';
+                  } else {
+                    timePoint = 'bedtime';
+                  }
+
+                  timeStamp = new Date(...date, ...time);
+
+                  prev.push({
+                    id: i,
+                    timeStamp,
+                    date,
+                    time,
+                    timePoint,
+                    side: item[3],
+                    sys: item[4],
+                    dia: item[5],
+                    pulse: item[6]
+                  });
+                }
+                return prev;
+              }, []);
+              // console.table(newData);
+              return newData;
+            },
+            function(response) {
+              appendPre('Error: ' + response.result.error.message);
+            }
+          ).then(
+            function(res) {
+              const dataCalc = res.reduce((prev, item) => {
+                const targetIndex =  prev.findIndex((ele) => {
+                  return ele.date === `${item.timeStamp.getFullYear()}-${item.timeStamp.getMonth() + 1}-${item.timeStamp.getDate()}`;
+                })
+                let side = '';
+                let weekDay = '';
+                
+                switch (item.side) {
+                  case '左上臂':
+                    side = "leftArm";
+                    break;
+                  
+                  case '右上臂':
+                    side = "rightArm";
+                    break;
+                    
+                  case '左手腕':
+                    side = "leftWrist";
+                    break;
+                    
+                  case '右手腕':
+                    side = "rightWrist";
+                    break;
+                  default:
+                    break;
+                }
+
+                switch (item.timeStamp.getDay()) {
+                  case 0:
+                    weekDay = "Sun";
+                    break;
+                  
+                  case 1:
+                    weekDay = "Mon";
+                    break;
+                
+                  case 2:
+                    weekDay = "Tue";
+                    break;
+                
+                  case 3:
+                    weekDay = "Wed";
+                    break;
+                
+                  case 4:
+                    weekDay = "Thu";
+                    break;
+                
+                  case 5:
+                    weekDay = "Fri";
+                    break;
+                
+                  case 6:
+                    weekDay = "Sat";
+                    break;
+                
+                  default:
+                    break;
+                }
+                if(targetIndex === -1) {
+                  prev.push({
+                    id: prev.length,
+                    weekDay,
+                    date:　`${item.timeStamp.getFullYear()}-${item.timeStamp.getMonth() + 1}-${item.timeStamp.getDate()}`,
+                  });
+                  prev[prev.length - 1][side] = {};
+                  prev[prev.length - 1][side][item.timePoint] = {
+                    sys: [],
+                    dia: [],
+                    pulse: [],
+                  };
+
+
+                  prev[prev.length - 1][side][item.timePoint].sys.push(item.sys);
+                  prev[prev.length - 1][side][item.timePoint].dia.push(item.dia);
+                  prev[prev.length - 1][side][item.timePoint].pulse.push(item.pulse);
+                } else {
+                  prev[targetIndex][side] = prev[targetIndex][side] || {};
+                  prev[targetIndex][side][item.timePoint] = prev[targetIndex][side][item.timePoint] ||{
+                    sys: [],
+                    dia: [],
+                    pulse: [],
+                  };
+                  prev[targetIndex][side][item.timePoint].sys.push(item.sys);
+                  prev[targetIndex][side][item.timePoint].dia.push(item.dia);
+                  prev[targetIndex][side][item.timePoint].pulse.push(item.pulse);
+                }
+
+                return prev;
+              }, []);
+
+              console.log(dataCalc);
+              return dataCalc;
+            }
+          ).then(
+            function(res) {
+              const target = document.getElementById('dataWrap');
+              let str = res.reduceRight(function(prev, item) {
+                prev += `
+                <h3>${item.date} (${item.weekDay})</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>時間點</th>
+                      <th>收縮壓</th>
+                      <th>舒張壓</th>
+                      <th>脈搏</th>
+                    </tr>
+                  </thead>
+                  <tbody>`;
+                for (const key in item.rightArm) {
+                  const value = item.rightArm;
+                  prev += `
+                    <tr>
+                      <td>${key}</td>
+                      <td>${average(value[key].sys)}</td>
+                      <td>${average(value[key].dia)}</td>
+                      <td>${average(value[key].pulse)}</td>
+                    </tr>
+                  `
+                }
+                prev +=`  
+                  </tbody>
+                </table>
+                `
+                return prev;
+              }, '');
+
+              target.innerHTML = str;
+            }
+          );
+      }
+    </script>
+
+    <script
+      async
+      defer
+      src="https://apis.google.com/js/api.js"
+      onload="this.onload=function(){};handleClientLoad()"
+      onreadystatechange="if (this.readyState === 'complete') this.onload()"
+    ></script>
+  </body>
+</html>
